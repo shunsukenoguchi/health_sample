@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:health/health.dart';
 
 void main() {
   runApp(const MyApp());
@@ -42,6 +43,49 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  Future<void> getSteps() async {
+    print('test1');
+    HealthFactory health = HealthFactory(useHealthConnectIfAvailable: true);
+    print('test2');
+
+    // define the types to get
+    var types = [
+      HealthDataType.STEPS,
+    ];
+    print('test3');
+
+    // requesting access to the data types before reading them
+
+    // bool requested = await health.requestAuthorization(types);
+    print('test4');
+
+    var now = DateTime.now();
+
+    // fetch health data from the last 24 hours
+    // List<HealthDataPoint> healthData = await health.getHealthDataFromTypes(
+    //     now.subtract(Duration(days: 1)), now, types);
+
+    // request permissions to write steps and blood glucose
+    types = [HealthDataType.STEPS];
+    var permissions = [
+      HealthDataAccess.READ_WRITE,
+    ];
+
+    await health.requestAuthorization(types, permissions: permissions);
+
+    // // write steps and blood glucose
+    // bool success =
+    //     await health.writeHealthData(10, HealthDataType.STEPS, now, now);
+    // success = await health.writeHealthData(
+    //     3.1, HealthDataType.BLOOD_GLUCOSE, now, now);
+
+    // get the number of steps for today
+    var midnight = DateTime(now.year, now.month, now.day);
+    int? steps = await health.getTotalStepsInInterval(midnight, now);
+
+    print('steps : $steps');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,6 +104,11 @@ class _MyHomePageState extends State<MyHomePage> {
               '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
+            ElevatedButton(
+                onPressed: () async {
+                  await getSteps();
+                },
+                child: const Text('Get Steps')),
           ],
         ),
       ),
