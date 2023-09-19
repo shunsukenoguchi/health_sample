@@ -34,15 +34,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> getSteps() async {
     HealthFactory health = HealthFactory(useHealthConnectIfAvailable: true);
-    // 取得する型を定義する
-    var types = [
-      HealthDataType.STEPS, // 歩数
-    ];
 
     var now = DateTime.now();
-
-    final stepPermission = await requestPermission(health, types);
-
+    final stepPermission = await requestPermission();
     // 今日の歩数を取得する
     if (stepPermission) {
       var midnight = DateTime(now.year, now.month, now.day);
@@ -63,8 +57,12 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Future<bool> requestPermission(
-      HealthFactory health, List<HealthDataType> types) async {
+  Future<bool> requestPermission() async {
+    HealthFactory health = HealthFactory(useHealthConnectIfAvailable: true);
+    // 取得する型を定義する
+    var types = [
+      HealthDataType.STEPS, // 歩数
+    ];
     // パーミッションのリクエスト
     var permissions = [
       HealthDataAccess.READ_WRITE,
