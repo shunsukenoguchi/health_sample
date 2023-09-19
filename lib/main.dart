@@ -30,60 +30,46 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
+  int _steps = 0;
 
   Future<void> getSteps() async {
-    print('test1');
     HealthFactory health = HealthFactory(useHealthConnectIfAvailable: true);
-    print('test2');
-
-    // define the types to get
+    // 取得する型を定義する
     var types = [
-      HealthDataType.STEPS,
+      HealthDataType.STEPS, // 歩数
     ];
-    print('test3');
-
-    // requesting access to the data types before reading them
-
-    // bool requested = await health.requestAuthorization(types);
-    print('test4');
 
     var now = DateTime.now();
 
-    // fetch health data from the last 24 hours
-    // List<HealthDataPoint> healthData = await health.getHealthDataFromTypes(
-    //     now.subtract(Duration(days: 1)), now, types);
+    final stepPermission = await requestPermission(health, types);
 
-    // request permissions to write steps and blood glucose
-    types = [HealthDataType.STEPS];
+    // 今日の歩数を取得する
+    if (stepPermission) {
+      var midnight = DateTime(now.year, now.month, now.day);
+      int? steps = await health.getTotalStepsInInterval(midnight, now);
+      setState(() {
+        _steps = steps ?? 0;
+      });
+    }
+  }
+
+  Future<void> addSteps() async {
+    HealthFactory health = HealthFactory(useHealthConnectIfAvailable: true);
+    var now = DateTime.now();
+    bool success =
+        await health.writeHealthData(10, HealthDataType.STEPS, now, now);
+    if (success) {
+      await getSteps();
+    }
+  }
+
+  Future<bool> requestPermission(
+      HealthFactory health, List<HealthDataType> types) async {
+    // パーミッションのリクエスト
     var permissions = [
       HealthDataAccess.READ_WRITE,
     ];
-
-    await health.requestAuthorization(types, permissions: permissions);
-
-    // // write steps and blood glucose
-    // bool success =
-    //     await health.writeHealthData(10, HealthDataType.STEPS, now, now);
-    // success = await health.writeHealthData(
-    //     3.1, HealthDataType.BLOOD_GLUCOSE, now, now);
-
-    // get the number of steps for today
-    var midnight = DateTime(now.year, now.month, now.day);
-    int? steps = await health.getTotalStepsInInterval(midnight, now);
-
-    print('steps : $steps');
+    return await health.requestAuthorization(types, permissions: permissions);
   }
 
   @override
@@ -97,25 +83,24 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
             Text(
-              '$_counter',
+              '$_steps',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             ElevatedButton(
-                onPressed: () async {
-                  await getSteps();
-                },
-                child: const Text('Get Steps')),
+              onPressed: () async {
+                await getSteps();
+              },
+              child: const Text('Get Steps'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                await addSteps();
+              },
+              child: const Text('Add Steps'),
+            ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
     );
   }
